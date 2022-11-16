@@ -1,91 +1,130 @@
 import Project from '../models/Project.js'
+import {
+  validateObjectId,
+  sendError,
+  sendSuccess,
+} from '../helpers/helperFunctions.js'
+import Task from '../models/Task.js'
 
 const newProject = async (req, res) => {
   const project = new Project(req.body)
-  project.owner = req.user._id
   try {
+    validateObjectId(req.user._id)
+    project.owner = req.user._id
     const storedProject = await project.save()
     res.json(storedProject)
   } catch (error) {
-    console.log(error)
+    sendError(res, error)
+    return
   }
 }
 
 const getProject = async (req, res) => {
   const { id } = req.params
+  try {
+    validateObjectId(id)
+    const project = await Project.findById(id).select('-__v')
+    if (!project) {
+      throw { code: 404, message: 'Project Not Found' }
+    }
 
-  console.log('user', req.user)
+    if (project.owner.toString() !== req.user._id.toString()) {
+      throw { code: 401, message: 'Invalid Action' }
+    }
 
-  const project = await Project.findById(id)
-  if (!project) {
-    const error = new Error('Project Not Found')
-    return res.status(404).json({ msg: error.message })
+    const tasks = await Task.find()
+      .where('project')
+      .equals(project._id)
+      .select('-__v')
+    return res.json({ statusCode: 200, project, tasks })
+  } catch (error) {
+    sendError(res, error)
+    return
   }
-
-  if (project.owner.toString() !== req.user._id.toString()) {
-    const error = new Error('Invalid Action')
-    return res.status(401).json({ msg: error.message })
-  }
-  return res.json(project)
 }
 
 const getProjects = async (req, res) => {
-  const projects = await Project.find().where('owner').equals(req.user)
-  res.json(projects)
+  try {
+    const projects = await Project.find().where('owner').equals(req.user)
+    if (!projects) {
+      throw { code: 404, message: 'Projects Not Found' }
+    }
+    res.json({ statusCode: 200, projects })
+  } catch (error) {
+    sendError(res, error)
+    return
+  }
 }
 
 const editProject = async (req, res) => {
   const { id } = req.params
-
-  console.log('user', req.user)
-  const project = await Project.findById(id)
-  if (!project) {
-    const error = new Error('Project Not Found')
-    return res.status(404).json({ msg: error.message })
-  }
-
-  if (project.owner.toString() !== req.user._id.toString()) {
-    const error = new Error('Invalid Action')
-    return res.status(401).json({ msg: error.message })
-  }
-
-  project.name = req.body.name || project.name
-  project.description = req.body.description || project.description
-  project.dueDate = req.body.dueDate || project.dueDate
-  project.client = req.body.client || project.client
-
   try {
+    validateObjectId(id)
+    const project = await Project.findById(id)
+
+    if (!project) {
+      throw { code: 404, message: 'Project Not Found' }
+    }
+
+    if (project.owner.toString() !== req.user._id.toString()) {
+      throw { code: 401, message: 'Invalid Action' }
+    }
+
+    project.name = req.body.name || project.name
+    project.description = req.body.description || project.description
+    project.dueDate = req.body.dueDate || project.dueDate
+    project.client = req.body.client || project.client
+
     const updatedProject = await project.save()
-    res.json(updatedProject)
+    res.json({ statusCode: 200, updatedProject })
   } catch (error) {
-    console.log(error)
+    sendError(res, error)
+    return
   }
 }
 const deleteProject = async (req, res) => {
   const { id } = req.params
-
-  const project = await Project.findById(id)
-
-  if (!project) {
-    const error = new Error('Project Not Found')
-    return res.status(404).json({ msg: error.message })
-  }
-
-  if (project.owner.toString() !== req.user._id.toString()) {
-    const error = new Error('Invalid Action')
-    return res.status(401).json({ msg: error.message })
-  }
-
   try {
+    validateObjectId(id)
+
+    const project = await Project.findById(id)
+
+    if (!project) {
+      throw { code: 404, message: 'Project Not Found' }
+    }
+
+    if (project.owner.toString() !== req.user._id.toString()) {
+      throw { code: 401, message: 'Invalid Action' }
+    }
+
     await project.deleteOne()
-    res.json({ msg: 'Deleted Project' })
+    sendSuccess(res, { message: 'Deleted Project' })
   } catch (error) {
-    console.log(error)
+    sendError(res, error)
+    return
   }
 }
 const addCollaborator = async (req, res) => {}
 const deleteCollaborator = async (req, res) => {}
-const getTasks = async (req, res) => {}
+
+const getTasks = async (req, res) => {
+  const { id } = req.params
+  try {
+    validateObjectId(id)
+
+    const project = await Project.findById(id)
+    console.log(project)
+    if (!project) {
+      throw { code: 404, message: 'Project Not Found' }
+    }
+
+    const tasks = await Task.find().where('project').equals(id).select('-__v')
+    res.json({ statusCode: 200, tasks })
+  } catch (error) {
+    sendError(res, error)
+    return
+  }
+}
 
 export {
   newProject,

@@ -1,18 +1,34 @@
 import Task from '../models/Task.js'
 import Project from '../models/Project.js'
-import { validateObjectId, sendError } from '../helpers/helperFunctions.js'
+import {
+  validateObjectId,
+  sendError,
+  sendSuccess,
+} from '../helpers/helperFunctions.js'
 
-const validateTaskAndProject = async taskId => {}
+const validateTaskAndProjectOwner = async (taskId, userId, res) => {
+  validateObjectId(taskId, res)
+
+  const task = await Task.findById(taskId).populate('project')
+
+  if (!task) {
+    throw { code: 404, message: 'Task not Found' }
+  }
+
+  if (task.project.owner.toString() !== userId.toString()) {
+    throw { code: 403, message: 'Invalid Action' }
+  }
+  return task
+}
 
 const newTask = async (req, res) => {
+  const { project } = req.body
   try {
-    const { project } = req.body
-
     validateObjectId(project, res)
     const foundProject = await Project.findById(project)
 
     if (!foundProject) {
-      throw { code: 404, message: 'Task not Project Not Found' }
+      throw { code: 404, message: 'Task Not Found' }
     }
 
     if (foundProject.owner.toString() !== req.user._id.toString()) {
@@ -20,46 +36,30 @@ const newTask = async (req, res) => {
     }
 
     const task = await Task.create(req.body)
-    res.json(task)
+    res.json({ statusCode: 200, task })
   } catch (error) {
     sendError(res, error)
+    return
   }
 }
 
 const getTask = async (req, res) => {
+  const { id } = req.params
   try {
-    const { id } = req.params
-    validateObjectId(id)
-    const task = await Task.findById(id).populate('project')
+    const task = await validateTaskAndProjectOwner(id, req.user._id, res)
 
-    if (!task) {
-      throw { code: 404, message: 'Task not Found' }
-    }
-
-    if (task.project.owner.toString() !== req.user._id.toString()) {
-      throw { code: 401, message: 'Invalid Action' }
-    }
-    return res.json(task)
+    return res.json({ statusCode: 200, task })
   } catch (error) {
     sendError(res, error)
+    return
   }
 }
 
 const editTask = async (req, res) => {
+  const { id } = req.params
+
   try {
-    const { id } = req.params
-
-    validateObjectId(id, res)
-
-    const task = await Task.findById(id).populate('project')
-
-    if (!task) {
-      throw { code: 404, message: 'Task not Found' }
-    }
-
-    if (task.project.owner.toString() !== req.user._id.toString()) {
-      throw { code: 403, message: 'Invalid Action' }
-    }
+    const task = await validateTaskAndProjectOwner(id, req.user._id, res)
 
     task.name = req.body.name || task.name
     task.description = req.body.description || task.description
@@ -67,30 +67,23 @@ const editTask = async (req, res) => {
     task.priority = req.body.priority || task.priority
 
     const updatedTask = await task.save()
-    res.json(updatedTask)
+    res.json({ statusCode: 200, updatedTask })
   } catch (error) {
     sendError(res, error)
+    return
   }
 }
 
 const deleteTask = async (req, res) => {
+  const { id } = req.params
+
   try {
-    const { id } = req.params
-
-    const project = await Project.findById(id)
-
-    if (!project) {
-      throw { code: 404, message: 'Project Not Found' }
-    }
-
-    if (project.owner.toString() !== req.user._id.toString()) {
-      throw { code: 401, message: 'Invalid Action' }
-    }
-
-    await project.deleteOne()
-    res.json({ msg: 'Deleted Project' })
+    const task = await validateTaskAndProjectOwner(id, req.user._id, res)
+    await task.deleteOne()
+    sendSuccess(res, { message: 'Deleted Task' })
   } catch (error) {
     sendError(res, error)
+    return
   }
 }
 const changeState = async (req, res) => {}

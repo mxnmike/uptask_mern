@@ -21,7 +21,7 @@ router
   .put(checkAuth, editProject)
   .delete(checkAuth, deleteProject)
 
-router.get('/task/:id', checkAuth, getTasks)
+router.get('/tasks/:id', checkAuth, getTasks)
 router.post('/add-collaborator/:id', checkAuth, addCollaborator)
 router.post('/delete-collaborator/:id', checkAuth, deleteCollaborator)
 

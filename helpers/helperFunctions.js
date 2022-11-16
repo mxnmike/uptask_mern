@@ -25,3 +25,21 @@ export const sendError = (res, e) => {
     message: e.message,
   })
 }
+
+export const sendSuccess = (res, success) => {
+  console.log(success)
+  const statusCode = success.code || 200
+  res.status(statusCode).send({
+    statusCode: statusCode,
+    message: success.message,
+  })
+}
+
+export const sendObject = (res, object) => {
+  console.log(object)
+  const statusCode = object.code || 200
+  res.status(statusCode).send({
+    statusCode: statusCode,
+    object,
+  })
+}

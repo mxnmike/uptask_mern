@@ -1,15 +1,18 @@
 import jwt from 'jsonwebtoken'
 import User from '../models/User.js'
+import { sendError, validateObjectId } from '../helpers/helperFunctions.js'
 
 const checkAuth = async (req, res, next) => {
   let token
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
-    try {
+  try {
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer')
+    ) {
       token = req.headers.authorization.split(' ')[1]
       const decoded = jwt.verify(token, process.env.JWT_SECRET)
+
+      validateObjectId(decoded.id, res)
 
       req.user = await User.findById(decoded.id).select(
         '-password -confirmed -token -createdAt -updatedAt -__v'
@@ -18,15 +21,14 @@ const checkAuth = async (req, res, next) => {
       if (req.user) {
         return next()
       }
-    } catch (error) {
-      return res.status(404).json({ msg: 'And Error Ocurred' })
     }
+    if (!token) {
+      throw { code: 401, message: 'Invalid Token' }
+    }
+    next()
+  } catch (error) {
+    sendError(res, error)
   }
-  if (!token) {
-    const error = new Error('Invalid Token')
-    return res.status(401).json({ msg: error.message })
-  }
-  next()
 }
 
 export default checkAuth
