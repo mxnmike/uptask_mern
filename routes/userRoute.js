@@ -16,8 +16,8 @@ const router = express.Router()
 router.post('/', register) // Creates new user
 router.post('/login', loginUser)
 router.get('/confirm/:token', confirmUser)
-router.post('/resetpassword', resetPassword)
-router.route('/resetpassword/:token').get(confirmResetToken).post(newPassword)
+router.post('/reset-password', resetPassword)
+router.route('/reset-password/:token').get(confirmResetToken).post(newPassword)
 router.get('/profile', checkAuth, profile)
 
 export default router

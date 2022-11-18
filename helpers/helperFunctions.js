@@ -15,6 +15,7 @@ export const sendError = (res, e) => {
     res.status(400).send({
       code: e.code,
       message: e.code === 11000 ? 'Duplicated Value' : 'Error',
+      error: true,
     })
     return
   }
@@ -23,6 +24,7 @@ export const sendError = (res, e) => {
   res.status(statusCode).send({
     statusCode: statusCode,
     message: e.message,
+    error: true,
   })
 }
 
@@ -32,6 +34,7 @@ export const sendSuccess = (res, success) => {
   res.status(statusCode).send({
     statusCode: statusCode,
     message: success.message,
+    error: false,
   })
 }
 

@@ -1,50 +1,53 @@
 import User from '../models/User.js'
 import generateId from '../helpers/generateId.js'
 import generateJWT from '../helpers/generateJWT.js'
-import {
-  validateObjectId,
-  sendError,
-  sendSuccess,
-  sendObject,
-} from '../helpers/helperFunctions.js'
+import { registerEmail, resetPasswordEmail } from '../helpers/email.js'
+import { sendError, sendSuccess } from '../helpers/helperFunctions.js'
 
 const getUserByEmail = async (email, res) => {
-  try {
-    const user = await User.findOne({ email })
-    if (!user) {
-      throw { code: 404, message: "User doesn't exist" }
-    }
-    return user
-  } catch (error) {
-    sendError(res, error)
+  const user = await User.findOne({ email })
+  if (!user) {
+    throw { code: 404, message: "User doesn't exist" }
   }
+  return user
 }
 
 const getUserByToken = async (token, res) => {
-  try {
-    const user = await User.findOne({ token })
-    if (!user) {
-      throw { code: 401, message: 'Invalid Token' }
-    }
-    return user
-  } catch (error) {
-    sendError(res, error)
+  const user = await User.findOne({ token })
+  if (!user) {
+    throw { code: 401, message: 'Invalid Token' }
   }
+  return user
 }
 
 const register = async (req, res) => {
   const { email } = req.body
   try {
-    if (await getUserByEmail(email, res)) {
-      throw { code: 400, message: 'User already registered' }
+    const foundUser = await User.findOne({ email })
+    if (foundUser) {
+      throw {
+        code: 400,
+        message: 'User already registered',
+      }
     }
 
-    const user = new User(req.body)
+    const user = await User.create(req.body)
     user.token = generateId()
-    const storedUser = await user.save()
-    sendSuccess(res, { message: `User Created:${storedUser.email}` })
+    await user.save()
+
+    registerEmail({
+      email: user.email,
+      name: user.name,
+      token: user.token,
+    })
+    sendSuccess(res, {
+      message:
+        'User Created successfully, Check your email to confirm your account',
+    })
   } catch (error) {
+    console.log('usercontroller error:', error)
     sendError(res, error)
+    return
   }
 }
 
@@ -75,6 +78,7 @@ const loginUser = async (req, res) => {
 
 const confirmUser = async (req, res) => {
   const { token } = req.params
+  console.log(req.url)
   try {
     const user = await getUserByToken(token, res)
 
@@ -82,9 +86,10 @@ const confirmUser = async (req, res) => {
       throw { code: 404, message: 'User Not Found' }
     }
     user.confirmed = true
-    user.token = null
+    user.token = ''
     await user.save()
-    sendSuccess(res, { message: user })
+    sendSuccess(res, { message: 'User Confirmed Successfully' })
+    return
   } catch (error) {
     sendError(res, error)
   }
@@ -99,6 +104,11 @@ const resetPassword = async (req, res) => {
     }
     user.token = generateId()
     await user.save()
+    resetPasswordEmail({
+      email: user.email,
+      name: user.name,
+      token: user.token,
+    })
     sendSuccess(res, {
       message: 'Hemos enviado un email con las instrucciones.',
     })
@@ -114,7 +124,7 @@ const confirmResetToken = async (req, res) => {
     if (!user) {
       throw { code: 401, message: 'Invalid Token' }
     } else {
-      sendSuccess(res, { message: 'Valid User and Valid Token' })
+      sendSuccess(res, { message: 'Valid Token, Proceed to set New Password' })
     }
   } catch (error) {
     sendError(res, error)
@@ -131,7 +141,7 @@ const newPassword = async (req, res) => {
     }
     user.password = password
     user.confirmed = true
-    user.token = null
+    user.token = ''
     await user.save()
 
     sendSuccess(res, { message: 'Password Saved Successfully.' })
