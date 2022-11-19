@@ -2,7 +2,11 @@ import User from '../models/User.js'
 import generateId from '../helpers/generateId.js'
 import generateJWT from '../helpers/generateJWT.js'
 import { registerEmail, resetPasswordEmail } from '../helpers/email.js'
-import { sendError, sendSuccess } from '../helpers/helperFunctions.js'
+import {
+  sendError,
+  sendSuccess,
+  sendObject,
+} from '../helpers/helperFunctions.js'
 
 const getUserByEmail = async (email, res) => {
   const user = await User.findOne({ email })
@@ -63,10 +67,13 @@ const loginUser = async (req, res) => {
     }
     if (await user.verifyPasswords(password)) {
       return res.json({
-        id: user._id,
-        nombre: user.name,
-        email: user.email,
-        token: generateJWT(user._id),
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          token: generateJWT(user._id),
+        },
+        statusCode: 200,
       })
     } else {
       throw { code: 401, message: 'Incorrect Password' }
