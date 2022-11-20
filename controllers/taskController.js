@@ -28,7 +28,7 @@ const newTask = async (req, res) => {
     const foundProject = await Project.findById(project)
 
     if (!foundProject) {
-      throw { code: 404, message: 'Task Not Found' }
+      throw { code: 404, message: 'Project Not Found' }
     }
 
     if (foundProject.owner.toString() !== req.user._id.toString()) {
@@ -36,6 +36,8 @@ const newTask = async (req, res) => {
     }
 
     const task = await Task.create(req.body)
+    foundProject.tasks.push(task._id)
+    await foundProject.save()
     res.json({ statusCode: 200, task })
   } catch (error) {
     sendError(res, error)

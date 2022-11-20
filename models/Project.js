@@ -7,6 +7,12 @@ const projectSchema = mongoose.Schema(
     dueDate: { type: Date, default: Date.now() },
     client: { type: String, trim: true, required: true },
     owner: { type: Types.ObjectId, ref: 'User' },
+    tasks: [
+      {
+        type: Types.ObjectId,
+        ref: 'Task',
+      },
+    ],
     colaborators: [{ type: Types.ObjectId, ref: 'User' }],
   },
   { timestamps: true }
