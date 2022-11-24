@@ -4,7 +4,7 @@ const { MongoError } = mongo
 
 export const validateObjectId = id => {
   if (!ObjectId.isValid(id)) {
-    throw { code: 400, message: `Invalid ObjectId: ${id}.` }
+    throw { code: 400, message: `Invalid ObjectId` }
   }
 }
 

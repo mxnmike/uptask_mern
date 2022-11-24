@@ -82,7 +82,7 @@ const deleteTask = async (req, res) => {
   try {
     const task = await validateTaskAndProjectOwner(id, req.user._id, res)
     await task.deleteOne()
-    sendSuccess(res, { message: 'Deleted Task' })
+    sendSuccess(res, { message: 'Task was Deleted Successfully' })
   } catch (error) {
     sendError(res, error)
     return
