@@ -24,9 +24,6 @@ router
 
 router.get('/tasks/:id', checkAuth, getTasks)
 router.post('/collaborators', checkAuth, searchCollaborator)
-router
-  .route('/collaborators/:id')
-  .delete(checkAuth, deleteCollaborator)
-  .post(checkAuth, addCollaborator)
-
+router.post('/collaborators/:id', checkAuth, addCollaborator)
+router.post('/delete-collaborator/:id', checkAuth, deleteCollaborator)
 export default router

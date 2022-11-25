@@ -13,7 +13,7 @@ const projectSchema = mongoose.Schema(
         ref: 'Task',
       },
     ],
-    colaborators: [{ type: Types.ObjectId, ref: 'User' }],
+    collaborators: [{ type: Types.ObjectId, ref: 'User' }],
   },
   { timestamps: true }
 )

@@ -25,13 +25,20 @@ const getProject = async (req, res) => {
   try {
     validateObjectId(id)
     const project = await Project.findById(id)
-      .select('-__v')
-      .populate('tasks', '-__v')
+      .select('-createdAt -__v -updatedAt')
+      .populate('tasks', '-createdAt -__v -updatedAt')
+      .populate('collaborators', 'name email')
+
     if (!project) {
       throw { code: 404, message: 'Project Not Found' }
     }
 
-    if (project.owner.toString() !== req.user._id.toString()) {
+    if (
+      project.owner.toString() !== req.user._id.toString() &&
+      !project.collaborators.some(
+        collaborator => collaborator._id.toString() === req.user._id.toString()
+      )
+    ) {
       throw { code: 401, message: 'Invalid Action' }
     }
 
@@ -42,16 +49,14 @@ const getProject = async (req, res) => {
     return res.json({ statusCode: 200, project, tasks })
   } catch (error) {
     sendError(res, error)
-    // return
   }
 }
 
 const getProjects = async (req, res) => {
   try {
-    const projects = await Project.find()
-      .where('owner')
-      .equals(req.user)
-      .select('-tasks -__v')
+    const projects = await Project.find({
+      $or: [{ collaborators: { $in: req.user } }, { owner: { $in: req.user } }],
+    }).select('-tasks -__v')
     if (!projects) {
       throw { code: 404, message: 'Projects Not Found' }
     }
@@ -131,7 +136,7 @@ const getTasks = async (req, res) => {
     return
   }
 }
-
+// SECTION: - COLLABORATORS
 const addCollaborator = async (req, res) => {
   const { email } = req.body
   try {
@@ -153,6 +158,17 @@ const addCollaborator = async (req, res) => {
     if (project.owner.toString() === user._id.toString()) {
       throw { code: 401, message: 'Project Owner cannot be Collaborator' }
     }
+
+    if (project.collaborators.includes(user._id)) {
+      throw {
+        code: 401,
+        message: 'User is already Collaborator in this project',
+      }
+    }
+
+    project.collaborators.push(user._id)
+    await project.save()
+    sendSuccess(res, { message: 'Collaborator Added Successfully' })
   } catch (error) {
     sendError(res, error)
   }
@@ -174,7 +190,23 @@ const searchCollaborator = async (req, res) => {
     sendError(res, error)
   }
 }
-const deleteCollaborator = async (req, res) => {}
+const deleteCollaborator = async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id)
+    if (!project) {
+      throw { code: 404, message: 'Project Not Found' }
+    }
+    if (project.owner.toString() !== req.user._id.toString()) {
+      throw { code: 401, message: 'Invalid Action' }
+    }
+
+    project.collaborators.pull(req.body.id)
+    await project.save()
+    sendSuccess(res, { message: 'Collaborator Removed Successfully' })
+  } catch (error) {
+    sendError(res, error)
+  }
+}
 
 export {
   newProject,
