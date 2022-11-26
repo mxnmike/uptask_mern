@@ -21,6 +21,30 @@ const validateTaskAndProjectOwner = async (taskId, userId, res) => {
   return task
 }
 
+const validateTaskProjectOwnerAndCollaborators = async (taskId, req, res) => {
+  validateObjectId(taskId, res)
+
+  const task = await Task.findById(taskId).populate('project')
+
+  if (!task) {
+    throw { code: 404, message: 'Task not Found' }
+  }
+
+  const userId = req.user._id
+  const { project } = task
+  const { collaborators } = project
+
+  if (
+    project.owner.toString() !== userId.toString() &&
+    !collaborators.some(
+      collaborator => collaborator._id.toString() === userId.toString()
+    )
+  ) {
+    throw { code: 403, message: 'Invalid Action' }
+  }
+  return task
+}
+
 const newTask = async (req, res) => {
   const { project } = req.body
   try {
@@ -81,13 +105,41 @@ const deleteTask = async (req, res) => {
 
   try {
     const task = await validateTaskAndProjectOwner(id, req.user._id, res)
-    await task.deleteOne()
+
+    const project = await Project.findById(task.project)
+    project.tasks.pull(task._id)
+
+    await Promise.allSettled([project.save(), task.deleteOne()])
+
     sendSuccess(res, { message: 'Task was Deleted Successfully' })
   } catch (error) {
     sendError(res, error)
     return
   }
 }
-const changeState = async (req, res) => {}
+
+const changeState = async (req, res) => {
+  const { id } = req.params
+
+  try {
+    const task = await validateTaskProjectOwnerAndCollaborators(id, req, res)
+    task.state = !task.state
+    task.completed = req.user._id
+    console.log(task.project)
+    await task.save()
+    const updatedTask = await Task.findById(id)
+      .select('-__v -updatedAt -createdAt')
+      .populate('project', '-__v -updatedAt -createdAt')
+      .populate('completed', '_id name email')
+    res.json({
+      statusCode: 200,
+      message: 'Task Updated Successfully',
+      task: updatedTask,
+    })
+  } catch (error) {
+    sendError(res, error)
+    return
+  }
+}
 
 export { newTask, getTask, editTask, deleteTask, changeState }

@@ -24,10 +24,18 @@ const getProject = async (req, res) => {
   const { id } = req.params
   try {
     validateObjectId(id)
+    const populatePredicate = {
+      path: 'tasks',
+      populate: {
+        path: 'completed',
+        select: '_id name email',
+      },
+      select: '-createdAt -__v -updatedAt',
+    }
     const project = await Project.findById(id)
       .select('-createdAt -__v -updatedAt')
-      .populate('tasks', '-createdAt -__v -updatedAt')
-      .populate('collaborators', 'name email')
+      .populate(populatePredicate)
+      .populate('collaborators', '_id, name email')
 
     if (!project) {
       throw { code: 404, message: 'Project Not Found' }

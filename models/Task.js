@@ -8,6 +8,7 @@ const taskSchema = mongoose.Schema(
     dueDate: { type: Date, default: Date.now() },
     priority: { type: String, required: true, enum: ['Low', 'Medium', 'High'] },
     project: { type: Types.ObjectId, ref: 'Project' },
+    completed: { type: Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }
 )
