@@ -93,7 +93,11 @@ const editTask = async (req, res) => {
     task.priority = req.body.priority || task.priority
 
     const updatedTask = await task.save()
-    res.json({ statusCode: 200, updatedTask })
+    res.json({
+      statusCode: 200,
+      message: 'Task Saved Successfully',
+      task: updatedTask,
+    })
   } catch (error) {
     sendError(res, error)
     return

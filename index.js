@@ -55,4 +55,15 @@ io.on('connection', socket => {
     console.log('project:', project)
     socket.to(project).emit('added task', task)
   })
+
+  socket.on('delete task', task => {
+    const project = task.project
+    socket.to(project).emit('deleted task', task)
+  })
+
+  socket.on('edit task', task => {
+    const project = task.project
+    console.log('editedTask:', task)
+    socket.to(project).emit('edited task', task)
+  })
 })
