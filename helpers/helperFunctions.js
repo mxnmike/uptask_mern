@@ -9,7 +9,6 @@ export const validateObjectId = id => {
 }
 
 export const sendError = (res, e) => {
-  console.log(e)
   if (e instanceof MongoError) {
     console.error(e)
     res.status(400).send({
@@ -29,7 +28,6 @@ export const sendError = (res, e) => {
 }
 
 export const sendSuccess = (res, success) => {
-  console.log(success)
   const statusCode = success.code || 200
   res.status(statusCode).send({
     statusCode: statusCode,
@@ -39,7 +37,6 @@ export const sendSuccess = (res, success) => {
 }
 
 export const sendObject = (res, object) => {
-  console.log(object)
   const statusCode = object.code || 200
   res.status(statusCode).send({
     statusCode: statusCode,

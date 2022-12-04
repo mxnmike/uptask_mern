@@ -89,7 +89,6 @@ const editProject = async (req, res) => {
       throw { code: 401, message: 'Invalid Action' }
     }
 
-    console.log('Body Tasks', req.body.tasks)
     project.name = req.body.name || project.name
     project.description = req.body.description || project.description
     project.dueDate = req.body.dueDate || project.dueDate
@@ -132,7 +131,6 @@ const getTasks = async (req, res) => {
     validateObjectId(id)
 
     const project = await Project.findById(id)
-    console.log(project)
     if (!project) {
       throw { code: 404, message: 'Project Not Found' }
     }

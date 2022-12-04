@@ -49,7 +49,6 @@ const register = async (req, res) => {
         'User Created successfully, Check your email to confirm your account',
     })
   } catch (error) {
-    console.log('usercontroller error:', error)
     sendError(res, error)
     return
   }
@@ -85,7 +84,6 @@ const loginUser = async (req, res) => {
 
 const confirmUser = async (req, res) => {
   const { token } = req.params
-  console.log(req.url)
   try {
     const user = await getUserByToken(token, res)
 

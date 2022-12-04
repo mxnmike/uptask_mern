@@ -129,7 +129,6 @@ const changeState = async (req, res) => {
     const task = await validateTaskProjectOwnerAndCollaborators(id, req, res)
     task.state = !task.state
     task.completed = req.user._id
-    console.log(task.project)
     await task.save()
     const updatedTask = await Task.findById(id)
       .select('-__v -updatedAt -createdAt')

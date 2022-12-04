@@ -40,7 +40,6 @@ userSchema.pre('save', async function (next) {
 
 userSchema.methods.verifyPasswords = async function (formPassword) {
   const verified = await bcrypt.compare(formPassword, this.password)
-  console.log(verified)
   return verified
 }
 

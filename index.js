@@ -42,17 +42,14 @@ const io = new Server(server, {
 })
 
 io.on('connection', socket => {
-  console.log('connected to Socket.io')
   //Define Socket.io Events
 
   socket.on('open project', project => {
-    console.log('room:', project)
     socket.join(project)
   })
 
   socket.on('new task', task => {
     const project = task.project
-    console.log('project:', project)
     socket.to(project).emit('added task', task)
   })
 
@@ -62,8 +59,12 @@ io.on('connection', socket => {
   })
 
   socket.on('edit task', task => {
-    const project = task.project
-    console.log('editedTask:', task)
-    socket.to(project).emit('edited task', task)
+    const project = task.project._id
+    socket.to(project).emit('updated task', task)
+  })
+
+  socket.on('complete task', task => {
+    const project = task.project._id
+    socket.to(project).emit('completed task', task)
   })
 })
